@@ -5,14 +5,19 @@ import yaml
 import datetime
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
-from IPython import embed
 
 BOTO_ERROR = False
+IPYTHON_ERROR = False
 
 try:
     from boto import ec2
 except:
     BOTO_ERROR = True
+
+try:
+    from IPython import embed
+except:
+    IPYTHON_ERROR = True
 
 def get_spot_price(client, history_length_days, instance_type):
     now = datetime.datetime.now()
@@ -49,11 +54,6 @@ if __name__ == "__main__":
     history_length_days = config_yaml.get('history_length_days')
   else:
     history_length_days = 7 
-
-  if not config_yaml.has_key('availability_zone'):
-    availability_zone = 'us-west-1a'
-  else:
-    availability_zone = config_yaml.get('availability_zone')
 
   if not config_yaml.has_key('plot_image_name'):
     plot_image_name = 'plot.png'
@@ -99,37 +99,23 @@ if __name__ == "__main__":
   
   print("INFO: Number of prices (currently max 1000): " + str(len(prices)))
 
-  #
-  # Convert datetimes, create array for dates and values
-  #
- 
-  dates = []
-  values = []
-  for h in prices:
-    if h.availability_zone == availability_zone:
-      values.append(h.price)
-
-  # get the average
-  vmean = float(sum(values)) / len(values)
-  
-  # reset values
-  print("INFO: Number of values before removing outliers: " + str(len(values)))
-  values = []
+  azs = {}
+  all_prices = []
   # ugly...just trying to get rid of some outliers...
-  max_value = vmean*outliers_multiplier
-  print("INFO: Mean before removing outliers: " + str(vmean))
-  print("INFO: Max outlier price: " + str(max_value))
   for h in prices:
-    if h.availability_zone == availability_zone and h.price < max_value:
-      # magic!
-      ts = mdates.datestr2num(h.timestamp)
-      dates.append(ts)
-      values.append(h.price)
+    if h.availability_zone not in azs:
+      print("INFO: adding az " + h.availability_zone)
+      azs[h.availability_zone] = {}
+      azs[h.availability_zone]['prices'] = []
+      azs[h.availability_zone]['timestamps'] = []
 
-  # recalculate mean
-  vmean = float(sum(values)) / len(values)
-  print("INFO: Number of values after removing outliers: " + str(len(values)))
-  print("INFO: Mean price after removing outliers: " + str(vmean))
+    #if h.price < max_value:
+    # magic!
+    ts = mdates.datestr2num(h.timestamp)
+    azs[h.availability_zone]['timestamps'].append(ts)
+    azs[h.availability_zone]['prices'].append(h.price)
+    # load up all prices to get an avg later...
+    all_prices.append(h.price)
 
   #
   # Finally plot...
@@ -139,8 +125,13 @@ if __name__ == "__main__":
   fig.set_size_inches(18.5, 10.5)
   graph = fig.add_subplot(111)
   graph.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M'))
-  graph.plot_date(dates, values, 'o-', label=availability_zone)
-  # ugly
+
+  # plot all the availabilty_zones that were returned
+  for az in azs:
+    timestamps = azs[az]['timestamps']
+    prices = azs[az]['prices']
+    graph.plot_date(timestamps, prices, 'o-', label=az )
+
   fig.autofmt_xdate()
   plt.locator_params(nbins=5)
   plt.legend(loc=2) # top left
@@ -148,13 +139,7 @@ if __name__ == "__main__":
   plt.xlabel("Time")
   plt.savefig(plot_image_name)
   print("INFO: Writing image to " + plot_image_name)
-
-  azs = []
-  for h in prices:
-    print h.availability_zone
-    if h.availability_zone not in azs:
-      azs.append(h.availability_zone)
-
+  # ugly...
+  avg = sum(all_prices) / len(all_prices)
+  print("INFO: Average price for all availability zones: " + str(avg))
   print("INFO: Done!")
-
-  embed()
