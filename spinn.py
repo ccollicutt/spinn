@@ -114,10 +114,23 @@ if __name__ == "__main__":
 
     # magic!
     ts = mdates.datestr2num(h.timestamp)
-    azs[h.availability_zone]['timestamps'].append(ts)
-    azs[h.availability_zone]['prices'].append(h.price)
-    # load up all prices to get an avg later...
+    
     all_prices.append(h.price)
+    if len(all_prices) > 0:
+        cur_avg = sum(all_prices) / len(all_prices)
+    else:
+        cur_avg = -1
+
+    # ugly but kind of needed for now as aws has some funky values often
+    # if h.price is larger than the the current average * some multiplier
+    # then dump the value.
+    if cur_avg > 0:
+        if h.price < outliers_multiplier * cur_avg:
+            azs[h.availability_zone]['timestamps'].append(ts)
+            azs[h.availability_zone]['prices'].append(h.price)
+    else:
+        azs[h.availability_zone]['timestamps'].append(ts)
+        azs[h.availability_zone]['prices'].append(h.price)
 
   #
   # Finally plot...
