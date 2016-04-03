@@ -4,9 +4,11 @@ Just an ugly script to mess around with AWS spot instances.
 
 Right now just prints out a plot based on some configuration values.
 
-## Example image
+## Example images
 
 ![Example plot image](example_images/1.png)
+
+![Example plot image2](example_images/2.png)
 
 ## Issues
 
