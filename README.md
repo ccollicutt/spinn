@@ -2,7 +2,7 @@
 
 Just an ugly script to mess around with AWS spot instances.
 
-Right now just prints out a graph.
+Right now just prints out a plot based on some configuration values.
 
 ## Issues
 

@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+#
+# Basically just messing around with plotting spot instance prices.
+#
+
 import sys
 import yaml
 import datetime
@@ -101,7 +105,6 @@ if __name__ == "__main__":
 
   azs = {}
   all_prices = []
-  # ugly...just trying to get rid of some outliers...
   for h in prices:
     if h.availability_zone not in azs:
       print("INFO: adding az " + h.availability_zone)
@@ -109,7 +112,6 @@ if __name__ == "__main__":
       azs[h.availability_zone]['prices'] = []
       azs[h.availability_zone]['timestamps'] = []
 
-    #if h.price < max_value:
     # magic!
     ts = mdates.datestr2num(h.timestamp)
     azs[h.availability_zone]['timestamps'].append(ts)
